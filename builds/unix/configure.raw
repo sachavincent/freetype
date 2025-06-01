@@ -46,7 +46,6 @@ if test ${cross_compiling} = yes; then
   AC_CHECK_PROG(CC_BUILD, ${build}-gcc, ${build}-gcc)
   test -z "${CC_BUILD}" && AC_CHECK_PROG(CC_BUILD, gcc, gcc)
   test -z "${CC_BUILD}" && AC_CHECK_PROG(CC_BUILD, cc, cc, , , /usr/ucb/cc)
-  test -z "${CC_BUILD}" && AC_CHECK_PROG(CC_BUILD, clang, clang)
   test -z "${CC_BUILD}" && AC_MSG_ERROR([cannot find native C compiler])
 
   AC_MSG_CHECKING([for suffix of native executables])
@@ -63,18 +62,12 @@ if test ${cross_compiling} = yes; then
   fi
   rm -f a.* b.* a_out.exe conftest.*
   AC_MSG_RESULT($EXEEXT_BUILD)
-  CFLAGS_BUILD=
-  LDFLAGS_BUILD=
 else
   CC_BUILD=${CC}
-  CFLAGS_BUILD=${CFLAGS}
-  LDFLAGS_BUILD=${LDFLAGS}
   EXEEXT_BUILD=${EXEEXT}
 fi
 
 AC_SUBST(CC_BUILD)
-AC_SUBST(CFLAGS_BUILD)
-AC_SUBST(LDFLAGS_BUILD)
 AC_SUBST(EXEEXT_BUILD)
 
 
@@ -429,13 +422,13 @@ fi
 # check for system libharfbuzz
 
 AC_ARG_WITH([harfbuzz],
-  [AS_HELP_STRING([--with-harfbuzz=@<:@yes|dynamic|no|auto@:>@],
+  [AS_HELP_STRING([--with-harfbuzz=@<:@yes|no|auto@:>@],
                   [improve auto-hinting of OpenType fonts @<:@default=auto@:>@])],
   [], [with_harfbuzz=auto])
 
 have_harfbuzz=no
 if test x"$with_harfbuzz" = xyes -o x"$with_harfbuzz" = xauto; then
-  harfbuzz_pkg="harfbuzz >= 2.6.8"
+  harfbuzz_pkg="harfbuzz >= 2.0.0"
   have_harfbuzz_pkg=no
 
   if test x"$HARFBUZZ_CFLAGS" = x -a x"$HARFBUZZ_LIBS" = x; then
@@ -465,24 +458,10 @@ if test x"$with_harfbuzz" = xyes -o x"$with_harfbuzz" = xauto; then
   fi
 fi
 
-have_harfbuzz_dynamic=no
-if test x"$have_harfbuzz" = xno; then
-  if test x"$with_harfbuzz" = xdynamic -o x"$with_harfbuzz" = xauto; then
-    # Check for libdl
-    AC_CHECK_LIB([dl], [dlopen], [have_harfbuzz_dynamic=yes])
-    if test x"$have_harfbuzz_dynamic" = xyes; then
-      have_harfbuzz="yes (dynamic)"
-      HARFBUZZ_CFLAGS=
-      HARFBUZZ_LIBS="-ldl"
-    fi
-  fi
+if test x"$with_harfbuzz" = xyes -a "$have_harfbuzz" = no; then
+  AC_MSG_ERROR([harfbuzz support requested but library not found])
 fi
 
-if test x"$have_harfbuzz" = xno; then
-  if test x"$with_harfbuzz" != xno -a "$with_harfbuzz" != xauto; then
-    AC_MSG_ERROR([harfbuzz support requested but library not found])
-  fi
-fi
 
 # check for system libbrotlidec
 
@@ -1088,13 +1067,13 @@ AC_SUBST([build_libtool_libs])
 
 ftoption_set()
 {
-  regexp="-e \\\"s|.*#.*def.*$1\>.*|#define $1|\\\""
+  regexp="-e \\\"s|.*#.*def.*$1.*|#define $1|\\\""
   FTOPTION_H_SED="$FTOPTION_H_SED $regexp"
 }
 
 ftoption_unset()
 {
-  regexp="-e \\\"s|.*#.*def.*$1\>.*|/* #undef $1 */|\\\""
+  regexp="-e \\\"s|.*#.*def.*$1.*|/* #undef $1 */|\\\""
   FTOPTION_H_SED="$FTOPTION_H_SED $regexp"
 }
 
@@ -1125,11 +1104,6 @@ if test "$have_harfbuzz" != no; then
   ftoption_set FT_CONFIG_OPTION_USE_HARFBUZZ
 else
   ftoption_unset FT_CONFIG_OPTION_USE_HARFBUZZ
-fi
-if test "$have_harfbuzz_dynamic" != no; then
-  ftoption_set FT_CONFIG_OPTION_USE_HARFBUZZ_DYNAMIC
-else
-  ftoption_unset FT_CONFIG_OPTION_USE_HARFBUZZ_DYNAMIC
 fi
 if test "$have_brotli" != no; then
   CFLAGS="$CFLAGS $BROTLI_CFLAGS"

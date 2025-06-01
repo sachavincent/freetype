@@ -787,7 +787,7 @@
       FT_UInt  instance_index = (FT_UInt)face_index >> 16;
 
 
-      if ( instance_index && FT_HAS_MULTIPLE_MASTERS( ttface ) )
+      if ( FT_HAS_MULTIPLE_MASTERS( ttface ) )
       {
         error = FT_Set_Named_Instance( ttface, instance_index );
         if ( error )
@@ -906,11 +906,17 @@
     if ( error )
       return error;
 
-    exec->pedantic_hinting = pedantic;
+    exec->callTop = 0;
+    exec->top     = 0;
 
     exec->period    = 64;
     exec->phase     = 0;
     exec->threshold = 0;
+
+    exec->instruction_trap = FALSE;
+    exec->F_dot_P          = 0x4000L;
+
+    exec->pedantic_hinting = pedantic;
 
     {
       FT_Size_Metrics*  size_metrics = &exec->metrics;
@@ -924,6 +930,7 @@
 
       tt_metrics->ppem  = 0;
       tt_metrics->scale = 0;
+      tt_metrics->ratio = 0x10000L;
     }
 
     /* allow font program execution */
@@ -942,8 +949,11 @@
 
       FT_TRACE4(( "Executing `fpgm' table.\n" ));
       error = face->interpreter( exec );
-      FT_TRACE4(( error ? "  failed (error code 0x%x)\n" : "",
-                  error ));
+#ifdef FT_DEBUG_LEVEL_TRACE
+      if ( error )
+        FT_TRACE4(( "  interpretation failed with error code 0x%x\n",
+                    error ));
+#endif
     }
     else
       error = FT_Err_Ok;
@@ -1005,6 +1015,11 @@
     if ( error )
       return error;
 
+    exec->callTop = 0;
+    exec->top     = 0;
+
+    exec->instruction_trap = FALSE;
+
     exec->pedantic_hinting = pedantic;
 
     TT_Set_CodeRange( exec,
@@ -1020,8 +1035,11 @@
 
       FT_TRACE4(( "Executing `prep' table.\n" ));
       error = face->interpreter( exec );
-      FT_TRACE4(( error ? "  failed (error code 0x%x)\n" : "",
-                  error ));
+#ifdef FT_DEBUG_LEVEL_TRACE
+      if ( error )
+        FT_TRACE4(( "  interpretation failed with error code 0x%x\n",
+                    error ));
+#endif
     }
     else
       error = FT_Err_Ok;
