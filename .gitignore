@@ -6,4 +6,4 @@ subprojects/*
 !subprojects/*.wrap
 /tests/data/*
 .vs/*
-libs/*
+lib/*
