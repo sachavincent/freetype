@@ -343,23 +343,6 @@
     exec->tt_metrics = size->ttmetrics;
     exec->metrics    = *size->metrics;
 
-    /* set graphics state */
-    exec->GS = size->GS;
-
-    exec->twilight = size->twilight;
-
-    exec->pts.n_points   = 0;
-    exec->pts.n_contours = 0;
-
-    exec->zp1 = exec->pts;
-    exec->zp2 = exec->pts;
-    exec->zp0 = exec->pts;
-
-    exec->callTop = 0;
-    exec->top     = 0;
-
-    exec->instruction_trap = FALSE;
-
     return FT_Err_Ok;
   }
 
@@ -432,13 +415,16 @@
    */
   FT_LOCAL_DEF( FT_Error )
   TT_Run_Context( TT_ExecContext  exec,
+                  FT_Int          range,
                   TT_Size         size )
   {
-    TT_Goto_CodeRange( exec, tt_coderange_glyph, 0 );
+    TT_Goto_CodeRange( exec, range, 0 );
 
     exec->zp0 = exec->pts;
     exec->zp1 = exec->pts;
     exec->zp2 = exec->pts;
+
+    exec->twilight = size->twilight;
 
     /* reset graphics state */
     exec->GS = size->GS;
@@ -447,6 +433,8 @@
     /* before a new execution.                                  */
     exec->top     = 0;
     exec->callTop = 0;
+
+    exec->instruction_trap = FALSE;
 
     return exec->face->interpreter( exec );
   }

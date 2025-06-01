@@ -415,6 +415,7 @@ FT_BEGIN_HEADER
 
   FT_LOCAL( FT_Error )
   TT_Run_Context( TT_ExecContext  exec,
+                  FT_Int          range,
                   TT_Size         size );
 #endif /* TT_USE_BYTECODE_INTERPRETER */
 
